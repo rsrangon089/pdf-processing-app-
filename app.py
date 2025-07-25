@@ -7,9 +7,9 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
 app = Flask(__name__)
 
-# Load credentials from environment variable
+# গুগল ড্রাইভ API সেটআপ
 SCOPES = ['https://www.googleapis.com/auth/drive']
-creds_json = os.environ.get("GOOGLE_CREDS")  # Get JSON string from env var
+creds_json = os.environ.get("GOOGLE_CREDS")  # JSON string as ENV VAR
 if not creds_json:
     raise Exception("GOOGLE_CREDS environment variable not set")
 
@@ -17,10 +17,10 @@ info = json.loads(creds_json)
 credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
-# Set your shared folder ID here (put this also in environment if needed)
-SHARED_FOLDER_ID = os.environ.get("FOLDER_ID") or "👉তোমার ফোল্ডার আইডি এখানে👈"
+SHARED_FOLDER_ID = os.environ.get("FOLDER_ID")
+if not SHARED_FOLDER_ID:
+    raise Exception("FOLDER_ID environment variable not set")
 
-# Upload to Drive
 def upload_to_drive(name, file_stream, folder_id):
     file_metadata = {'name': name, 'parents': [folder_id]}
     media = MediaIoBaseUpload(file_stream, mimetype='application/pdf')
@@ -31,7 +31,6 @@ def upload_to_drive(name, file_stream, folder_id):
     ).execute()
     return file.get('id')
 
-# Download from Drive
 def download_from_drive(file_id):
     request = drive_service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
@@ -42,7 +41,6 @@ def download_from_drive(file_id):
     fh.seek(0)
     return fh
 
-# Delete from Drive
 def delete_from_drive(file_id):
     drive_service.files().delete(fileId=file_id).execute()
 
@@ -69,6 +67,7 @@ def process():
     input_pdf_stream = download_from_drive(file_id)
     doc = fitz.open(stream=input_pdf_stream.read(), filetype="pdf")
     new_doc = fitz.open()
+
     for page in doc:
         pix = page.get_pixmap()
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
