@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-import io, fitz
+import io, os, json, fitz
 from PIL import Image, ImageOps
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -7,14 +7,18 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
 app = Flask(__name__)
 
-# Setup Google Drive API
+# Load credentials from environment variable
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'service_account.json'
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+creds_json = os.environ.get("GOOGLE_CREDS")  # Get JSON string from env var
+if not creds_json:
+    raise Exception("GOOGLE_CREDS environment variable not set")
+
+info = json.loads(creds_json)
+credentials = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
-SHARED_FOLDER_ID = '👉তোমার ফোল্ডার আইডি এখানে👈'
+# Set your shared folder ID here (put this also in environment if needed)
+SHARED_FOLDER_ID = os.environ.get("FOLDER_ID") or "👉তোমার ফোল্ডার আইডি এখানে👈"
 
 # Upload to Drive
 def upload_to_drive(name, file_stream, folder_id):
