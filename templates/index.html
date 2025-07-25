@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head><title>PDF Processor</title></head>
+<body>
+  <h2>Upload PDF</h2>
+  <input type="file" id="pdfFile" />
+  <button onclick="uploadAndProcess()">Upload & Process</button>
+  <p id="status"></p>
+  <a id="downloadLink" href="#" target="_blank" style="display:none;">Download Processed PDF</a>
+
+<script>
+  async function uploadAndProcess() {
+    const fileInput = document.getElementById('pdfFile');
+    if(fileInput.files.length === 0) {
+      alert("Please select a PDF file");
+      return;
+    }
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('pdf', file);
+    document.getElementById('status').innerText = "Uploading...";
+    const uploadResp = await fetch('/upload', { method: 'POST', body: formData });
+    if(!uploadResp.ok) {
+      document.getElementById('status').innerText = "Upload failed.";
+      return;
+    }
+    const uploadData = await uploadResp.json();
+    const file_id = uploadData.file_id;
+    document.getElementById('status').innerText = "Processing...";
+    const processResp = await fetch('/process', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({file_id})
+    });
+    if(!processResp.ok) {
+      document.getElementById('status').innerText = "Processing failed.";
+      return;
+    }
+    const processData = await processResp.json();
+    document.getElementById('status').innerText = "Done!";
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = processData.download_url;
+    downloadLink.style.display = 'inline';
+  }
+</script>
+</body>
+</html>
