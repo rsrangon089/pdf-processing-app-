@@ -1,47 +1,264 @@
 <!DOCTYPE html>
-<html>
-<head><title>PDF Processor</title></head>
-<body>
-  <h2>Upload PDF</h2>
-  <input type="file" id="pdfFile" />
-  <button onclick="uploadAndProcess()">Upload & Process</button>
-  <p id="status"></p>
-  <a id="downloadLink" href="#" target="_blank" style="display:none;">Download Processed PDF</a>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF Slide Converter</title>
+  <style>
+    /* CSS same as you gave — gradient background, boxes, buttons styling, responsive, etc. */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-<script>
-  async function uploadAndProcess() {
-    const fileInput = document.getElementById('pdfFile');
-    if(fileInput.files.length === 0) {
-      alert("Please select a PDF file");
-      return;
+    html, body {
+      height: 100%;
+      width: 100%;
     }
-    const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append('pdf', file);
-    document.getElementById('status').innerText = "Uploading...";
-    const uploadResp = await fetch('/upload', { method: 'POST', body: formData });
-    if(!uploadResp.ok) {
-      document.getElementById('status').innerText = "Upload failed.";
-      return;
+
+    body {
+      background: linear-gradient(135deg, #7b2ff7, #f107a3, #ff5f6d, #ffc371, #00c6ff, #0072ff, #00ff87);
+      background-size: 1400% 1400%;
+      animation: gradientShift 20s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 20px;
+      color: #fff;
+      position: relative;
     }
-    const uploadData = await uploadResp.json();
-    const file_id = uploadData.file_id;
-    document.getElementById('status').innerText = "Processing...";
-    const processResp = await fetch('/process', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({file_id})
+
+    @keyframes gradientShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 25px;
+      box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      padding: 30px;
+      max-width: 1100px;
+      width: 100%;
+      justify-content: center;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .box {
+      width: 450px;
+      min-height: 360px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      font-weight: 800;
+      font-size: 1.8rem;
+      color: white;
+      text-align: center;
+    }
+
+    form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    form input[type="file"] {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    input[type="file"]::-webkit-file-upload-button,
+    input[type="file"]::file-selector-button {
+      background: linear-gradient(45deg, #FF6B6B, #FFD93D);
+      border: none;
+      padding: 12px 25px;
+      border-radius: 12px;
+      color: #222;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    input[type="file"]::-webkit-file-upload-button:hover,
+    input[type="file"]::file-selector-button:hover {
+      background: linear-gradient(45deg, #FFD93D, #FF6B6B);
+    }
+
+    input[type="submit"] {
+      background: linear-gradient(45deg, #6A82FB, #FC5C7D);
+      border: none;
+      padding: 16px;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 15px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 6px 20px rgba(111, 86, 255, 0.7);
+    }
+
+    input[type="submit"]:hover {
+      background: linear-gradient(45deg, #FC5C7D, #6A82FB);
+      box-shadow: 0 8px 28px rgba(252, 92, 125, 0.9);
+    }
+
+    .status-box {
+      color: #fff;
+      font-weight: 500;
+      line-height: 1.6;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 15px;
+      min-height: 250px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .status-box p {
+      margin-bottom: 8px;
+    }
+
+    .download-link {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .download-link a {
+      padding: 12px 20px;
+      background: linear-gradient(45deg, #00ff87, #60efff);
+      color: black;
+      font-weight: bold;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 5px 15px rgba(0, 255, 135, 0.6);
+      display: inline-block;
+      margin: 5px;
+    }
+
+    .download-link a:hover {
+      background: linear-gradient(45deg, #60efff, #00ff87);
+    }
+
+    @media (max-width: 900px) {
+      body {
+        align-items: flex-start;
+        padding-top: 80px;
+      }
+
+      .main-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .box {
+        width: 100%;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .footer-credit {
+      position: fixed;
+      top: 8px;
+      right: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      user-select: none;
+      opacity: 0.8;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      pointer-events: none;
+      text-shadow: 0 0 4px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="main-layout">
+    <!-- Upload Box -->
+    <div class="box">
+      <h2>Upload PDFs</h2>
+      <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="pdfs" multiple required />
+        <input type="submit" value="Convert PDF" />
+      </form>
+    </div>
+
+    <!-- Status Box -->
+    <div class="box">
+      <h2>Conversion Status</h2>
+      <div id="status" class="status-box">
+        <p>✅ Upload PDF files from the left panel.</p>
+        <p>🛠️ We'll invert colors, merge them, and layout slides.</p>
+        <p>📦 You will receive a downloadable ZIP after processing.</p>
+        <p>💡 Tip: Keep your files under 100MB for fast results.</p>
+      </div>
+      <div class="download-link" id="downloadLink" style="display:none;">
+        <a href="#" id="zipDownload" download>⬇️ Download ZIP File</a>
+        <a href="#" id="pdfDownload" download>📄 Download PDF File</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credit text top-right -->
+  <div class="footer-credit">Made by Rangon x ChatGPT</div>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const statusBox = document.getElementById("status");
+    const zipDownload = document.getElementById("zipDownload");
+    const pdfDownload = document.getElementById("pdfDownload");
+    const downloadLink = document.getElementById("downloadLink");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      statusBox.innerHTML = "<p>🚀 Uploading files...</p>";
+      zipDownload.href = "#";
+      pdfDownload.href = "#";
+      downloadLink.style.display = "none";
+
+      fetch("/", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to process PDF.");
+        return response.json();
+      })
+      .then(data => {
+        zipDownload.href = data.zip_url;
+        pdfDownload.href = data.pdf_url;
+        downloadLink.style.display = "block";
+
+        statusBox.innerHTML += "<p>✅ Inverted PDF pages.</p>";
+        statusBox.innerHTML += "<p>✅ Merged into single file.</p>";
+        statusBox.innerHTML += "<p>✅ Converted to 3-per-page layout.</p>";
+        statusBox.innerHTML += "<p>📦 Files are ready! Click the download buttons above.</p>";
+      })
+      .catch(err => {
+        statusBox.innerHTML += `<p style="color:red;">❌ Error: ${err.message}</p>`;
+      });
     });
-    if(!processResp.ok) {
-      document.getElementById('status').innerText = "Processing failed.";
-      return;
-    }
-    const processData = await processResp.json();
-    document.getElementById('status').innerText = "Done!";
-    const downloadLink = document.getElementById('downloadLink');
-    downloadLink.href = processData.download_url;
-    downloadLink.style.display = 'inline';
-  }
-</script>
+  </script>
 </body>
 </html>
