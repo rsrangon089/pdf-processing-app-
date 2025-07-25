@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PDF Slide Converter</title>
   <style>
-    /* CSS same as you gave — gradient background, boxes, buttons styling, responsive, etc. */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -212,7 +211,7 @@
         <p>📦 You will receive a downloadable ZIP after processing.</p>
         <p>💡 Tip: Keep your files under 100MB for fast results.</p>
       </div>
-      <div class="download-link" id="downloadLink" style="display:none;">
+      <div class="download-link" id="downloadLink">
         <a href="#" id="zipDownload" download>⬇️ Download ZIP File</a>
         <a href="#" id="pdfDownload" download>📄 Download PDF File</a>
       </div>
@@ -227,7 +226,6 @@
     const statusBox = document.getElementById("status");
     const zipDownload = document.getElementById("zipDownload");
     const pdfDownload = document.getElementById("pdfDownload");
-    const downloadLink = document.getElementById("downloadLink");
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -235,7 +233,6 @@
       statusBox.innerHTML = "<p>🚀 Uploading files...</p>";
       zipDownload.href = "#";
       pdfDownload.href = "#";
-      downloadLink.style.display = "none";
 
       fetch("/", {
         method: "POST",
@@ -248,7 +245,6 @@
       .then(data => {
         zipDownload.href = data.zip_url;
         pdfDownload.href = data.pdf_url;
-        downloadLink.style.display = "block";
 
         statusBox.innerHTML += "<p>✅ Inverted PDF pages.</p>";
         statusBox.innerHTML += "<p>✅ Merged into single file.</p>";
